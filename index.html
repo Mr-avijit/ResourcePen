@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESOURCES PEN | Enterprise Digital Asset Marketplace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              display: ['Plus Jakarta Sans', 'sans-serif'],
+            },
+            colors: {
+              black: '#000000',
+              primary: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                200: '#bfdbfe',
+                300: '#93c5fd',
+                400: '#60a5fa',
+                500: '#3b82f6',
+                600: '#2563eb', 
+                700: '#1d4ed8',
+                800: '#1e40af',
+                900: '#1e3a8a',
+              },
+              cyan: {
+                500: '#06b6d4', 
+              }
+            },
+            borderRadius: {
+              '3xl': '1.5rem',
+              '4xl': '2rem',
+              '5xl': '2.5rem',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(0, 0, 0, 0.08);
+      }
+      .dark {
+        --glass-bg: rgba(10, 10, 10, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.05);
+      }
+      .glass {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+      }
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      body { 
+        background-color: #FFFFFF;
+        color: #1a1a1a;
+      }
+      .dark body {
+        background-color: #000000;
+        color: #f5f5f5;
+      }
+      .enterprise-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 2.5rem;
+      }
+      .dark .enterprise-card {
+        background: #080808;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 2.5rem;
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@^0.474.0",
+    "react": "https://esm.sh/react@^19.0.0",
+    "react/": "https://esm.sh/react@^19.0.0/",
+    "react-dom": "https://esm.sh/react-dom@^19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.0.0/",
+    "framer-motion": "https://esm.sh/framer-motion@^12.0.0",
+    "three": "https://esm.sh/three@0.170.0",
+    "gsap": "https://esm.sh/gsap@3.12.5",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "express": "https://esm.sh/express@^5.2.1",
+    "cors": "https://esm.sh/cors@^2.8.6",
+    "jsonwebtoken": "https://esm.sh/jsonwebtoken@^9.0.3",
+    "dotenv": "https://esm.sh/dotenv@^17.2.3",
+    "helmet": "https://esm.sh/helmet@^8.1.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="font-sans antialiased selection:bg-primary-500/30">
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

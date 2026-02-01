@@ -1,0 +1,8 @@
+{
+  "name": "RESOURCES PEN - Enterprise UI Architecture",
+  "description": "A production-grade SaaS design system and marketplace platform for premium digital assets, featuring the COS Component Library.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

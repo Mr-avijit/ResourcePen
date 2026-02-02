@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Sun, Moon, Home, Layout, Zap, PenTool, Mail, Search, X } from 'lucide-react';
+import { ShoppingCart, Sun, Moon, Home, Layout, Zap, PenTool, Mail } from 'lucide-react';
 import { AppUser, AppView } from '../types';
 import ProfileDropdown from './ProfileDropdown';
 import { useNavigation } from '../store';
@@ -21,16 +21,66 @@ const Navbar: React.FC<NavbarProps> = ({
   theme, toggleTheme, openAuth, cartCount,
   onOpenCart, onNavigateHome, user
 }) => {
-  const { navigate } = useNavigation();
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const { view, navigate } = useNavigation();
+  const [activeSection, setActiveSection] = React.useState('sec-hero');
 
   const navItems = [
-    { label: 'Home', view: 'home', icon: Home },
-    { label: 'Products', view: 'products', icon: Layout },
-    { label: 'Solutions', view: 'services', icon: Zap },
-    { label: 'Resources', view: 'blog-list', icon: PenTool },
-    { label: 'Support', view: 'contact', icon: Mail },
+    { label: 'Home', id: 'sec-hero', icon: Home },
+    { label: 'Products', id: 'sec-products', icon: Layout },
+    { label: 'Solutions', id: 'sec-services', icon: Zap },
+    { label: 'Resources', id: 'sec-blog', icon: PenTool },
+    { label: 'Support', id: 'sec-contact', icon: Mail },
   ];
+
+  // Scroll Spy Logic
+  React.useEffect(() => {
+    const handleScroll = () => {
+      // Only active on home view
+      if (view !== 'home') return;
+
+      const scrollPosition = window.scrollY + 150; // Offset for navbar
+
+      // Find the current section
+      for (const item of navItems) {
+        const element = document.getElementById(item.id);
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(item.id);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check on mount
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [view]);
+
+  const handleNavClick = (id: string) => {
+    if (view !== 'home') {
+      navigate('home');
+      // Optional: Add logic to scroll after navigation if needed, 
+      // but for now simple navigation to home is a good fallback
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          const headerOffset = 100;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        const headerOffset = 100;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <>
@@ -47,61 +97,37 @@ const Navbar: React.FC<NavbarProps> = ({
               <span className="text-xl font-display font-black dark:text-white tracking-tighter">RESOURCES PEN</span>
             </motion.div>
 
-            {/* Dynamic Search */}
-            <div className="hidden lg:flex flex-1 justify-end max-w-md relative ml-auto mr-8">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {isSearchOpen ? (
-                  <motion.div
-                    initial={{ width: 48, opacity: 0, paddingLeft: 0 }}
-                    animate={{ width: "100%", opacity: 1 }}
-                    exit={{ width: 48, opacity: 0 }}
-                    transition={{ type: "spring", mass: 0.5, stiffness: 200, damping: 25 }}
-                    className="relative w-full"
-                  >
-                    <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-primary-500 pointer-events-none" />
-                    <input
-                      autoFocus
-                      type="text"
-                      placeholder="Search resources..."
-                      className="w-full bg-white dark:bg-zinc-900/80 border-0 ring-1 ring-slate-200 dark:ring-white/10 focus:ring-2 focus:ring-primary-500/30 rounded-2xl py-3.5 pl-12 pr-12 text-sm font-medium transition-all outline-none dark:text-white placeholder:text-slate-400/80 shadow-2xl shadow-slate-200/50 dark:shadow-black/50"
-                    />
-                    <button
-                      onClick={() => setIsSearchOpen(false)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full text-slate-400 hover:text-red-500 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    layoutId="search-trigger"
-                    onClick={() => setIsSearchOpen(true)}
-                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,1)" }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-3 px-6 py-3 bg-white/50 dark:bg-zinc-900/30 rounded-full text-slate-500 hover:text-primary-600 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all border border-slate-200/50 dark:border-white/5"
-                  >
-                    <Search size={18} />
-                    <span className="text-xs font-bold uppercase tracking-widest opacity-60">Search</span>
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-1 mx-auto">
+              {navItems.map(item => {
+                const isActive = activeSection === item.id && view === 'home';
 
-            {/* Desktop Menu */}
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-2">
-              {navItems.map(item => (
-                <div key={item.label} className="relative group">
-                  <button
-                    onClick={() => navigate(item.view as AppView)}
-                    className="relative z-10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-primary-600 transition-colors dark:text-slate-300 group-hover:text-primary-600"
-                  >
-                    {item.label}
-                  </button>
-                  {/* Hover Pill Effect */}
-                  <div className="absolute inset-0 bg-primary-50 dark:bg-primary-900/10 rounded-full scale-75 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out -z-0"></div>
-                </div>
-              ))}
+                return (
+                  <div key={item.label} className="relative group">
+                    <button
+                      onClick={() => handleNavClick(item.id)}
+                      className={`relative z-10 px-5 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 ${isActive
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400'
+                        }`}
+                    >
+                      {item.label}
+                    </button>
+                    {/* Active/Hover Pill Effect */}
+                    {(isActive) && (
+                      <motion.div
+                        layoutId="navbar-indicator"
+                        className="absolute inset-0 bg-primary-50 dark:bg-primary-900/20 rounded-full -z-0"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    {/* Hover Effect (only when not active) */}
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-slate-50 dark:bg-white/5 rounded-full scale-75 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out -z-10"></div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Global Actions */}

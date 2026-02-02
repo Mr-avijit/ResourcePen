@@ -16,6 +16,12 @@ const XCircleIcon = ({ size, className }: { size?: number, className?: string })
   <X size={size} className={className} />
 );
 
+export const COS_Label: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className = '' }) => (
+  <label className={`text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1 ${className}`}>
+    {children}
+  </label>
+);
+
 // --- 1. ATOMS: Primitives & Tokens ---
 
 export type COS_Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning' | 'info';
@@ -213,7 +219,7 @@ export const COS_ToastContainer: React.FC<{ toasts: Toast[], onRemove: (id: stri
             <h4 className="text-sm font-black dark:text-white uppercase tracking-wider">{t.title}</h4>
             <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium leading-relaxed">{t.message}</p>
           </div>
-          <button onClick={() => onRemove(t.id)} className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"><X size={14} /></button>
+          <button onClick={() => onRemove(t.id)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer z-10"><X size={16} /></button>
         </motion.div>
       ))}
     </AnimatePresence>

@@ -408,6 +408,14 @@ export interface ReferralPackage {
   upgradeAllowed: boolean;
   terms: string;
   createdAt: string;
+  // Enhanced Fields
+  features: string[];
+  permissions: string[];
+  tierLevel: 1 | 2 | 3 | 4 | 5;
+  marketingMaterialAccess: boolean;
+  prioritySupport: boolean;
+  colorTheme?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface UserReferral {

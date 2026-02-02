@@ -179,7 +179,7 @@ const TeamManagement: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
-      <COS_ToastContainer toasts={toasts} onRemove={() => { }} />
+      <COS_ToastContainer toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
 
       {/* --- Page Header --- */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">

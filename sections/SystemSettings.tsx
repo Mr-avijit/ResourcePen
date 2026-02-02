@@ -18,6 +18,8 @@ import { MockApiService } from '../MockApiService';
 interface SystemConfiguration {
   siteName: string;
   description: string;
+  logoUrl: string;
+  faviconUrl: string;
   maintenanceMode: boolean;
   publicRegistration: boolean;
   theme: 'light' | 'dark' | 'system';
@@ -66,6 +68,33 @@ const ConfigInput: React.FC<{ label: string; value: string; onChange: (val: stri
   </div>
 );
 
+const ConfigImageUpload: React.FC<{ label: string; value: string; onChange: (val: string) => void }> = ({ label, value, onChange }) => (
+  <div className="space-y-3">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <div className="flex items-center gap-6">
+      <div className="w-24 h-24 rounded-[1.5rem] bg-slate-100 dark:bg-zinc-900 border-2 border-dashed border-slate-200 dark:border-zinc-800 flex items-center justify-center relative overflow-hidden group">
+        {value ? (
+          <img src={value} alt="Preview" className="w-full h-full object-cover" />
+        ) : (
+          <Camera className="text-slate-300" size={24} />
+        )}
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+          <span className="text-[9px] font-bold text-white uppercase">Change</span>
+        </div>
+      </div>
+      <div className="flex-1 space-y-3">
+        <div className="flex items-center gap-2">
+          <button className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-bold hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors">Upload New</button>
+          <button onClick={() => onChange('')} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-bold hover:text-red-500 transition-colors">Remove</button>
+        </div>
+        <p className="text-[10px] text-slate-400 leading-relaxed">
+          Recommended size: 512x512px. Supports PNG, JPG, SVG.<br />max size 2MB.
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
 const SystemSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -74,6 +103,8 @@ const SystemSettings: React.FC = () => {
   const [config, setConfig] = useState<SystemConfiguration>({
     siteName: 'Nexus Enterprise',
     description: 'Advanced automated orchestration platform.',
+    logoUrl: 'https://ui-avatars.com/api/?name=Nexus+Enterprise&background=0ea5e9&color=fff&size=128',
+    faviconUrl: '',
     maintenanceMode: false,
     publicRegistration: true,
     theme: 'dark',
@@ -200,15 +231,30 @@ const SystemSettings: React.FC = () => {
                 >
                   <div>
                     <h3 className="text-xl font-display font-black dark:text-white mb-6 flex items-center gap-2">Protocol Header <div className="h-px flex-1 bg-slate-200 dark:bg-zinc-800 ml-4 rounded-full" /></h3>
+
+                    {/* Brand Assets Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                      <ConfigImageUpload
+                        label="Primary Brand Logo"
+                        value={config.logoUrl}
+                        onChange={v => setConfig({ ...config, logoUrl: v })}
+                      />
+                      <ConfigImageUpload
+                        label="Browser Favicon"
+                        value={config.faviconUrl}
+                        onChange={v => setConfig({ ...config, faviconUrl: v })}
+                      />
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <ConfigInput
-                        label="Platform Name"
+                        label="Brand Name"
                         value={config.siteName}
                         onChange={v => setConfig({ ...config, siteName: v })}
                         icon={Globe}
                       />
                       <ConfigInput
-                        label="System Description"
+                        label="Meta Description"
                         value={config.description}
                         onChange={v => setConfig({ ...config, description: v })}
                         icon={FileText}

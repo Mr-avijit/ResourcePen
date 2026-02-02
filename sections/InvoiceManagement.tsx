@@ -212,6 +212,87 @@ const InvoiceManagement: React.FC = () => {
     }
   };
 
+  // --- Print / Download Logic ---
+  const handlePrintInvoice = () => {
+    if (!selectedInvoice) return;
+
+    const printContent = document.getElementById('invoice-preview-container');
+    if (!printContent) return;
+
+    // Open a new window for the print job
+    const win = window.open('', '_blank', 'height=900,width=1000,menubar=no,status=no,toolbar=no');
+    if (!win) {
+      addToast('danger', 'Popup Blocked', 'Please allow popups to print the invoice.');
+      return;
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <title>Invoice #${selectedInvoice.id}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <script>
+            tailwind.config = {
+              theme: {
+                extend: {
+                  colors: {
+                    primary: { 
+                      50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 
+                      400: '#38bdf8', 500: '${brandingColor}', 600: '#0284c7', 700: '#0369a1' 
+                    }
+                  },
+                  fontFamily: {
+                    display: ['Inter', 'sans-serif'],
+                    sans: ['Inter', 'sans-serif'],
+                    mono: ['monospace']
+                  }
+                }
+              }
+            }
+          </script>
+          <style>
+             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+             body { 
+               font-family: 'Inter', sans-serif; 
+               -webkit-print-color-adjust: exact; 
+               print-color-adjust: exact;
+               background: white; 
+             }
+             /* Ensure dark mode classes don't break the paper look (force light/paper mode) */
+             .dark { color: black; background: white; }
+             @page { size: auto; margin: 0; }
+          </style>
+        </head>
+        <body class="bg-white min-h-screen">
+          <div class="max-w-[210mm] mx-auto p-10 print:p-0">
+             <!-- Injecting content -->
+             <div class="border rounded-[1.5rem] overflow-hidden shadow-sm print:shadow-none print:border-none">
+                ${printContent.innerHTML}
+             </div>
+          </div>
+          <script>
+            // Wait for Tailwind and content to fully render
+            window.onload = () => {
+              // Small delay to ensure styles are computed
+              setTimeout(() => {
+                window.print();
+                // We keep window open for better UX so user can re-print if failed, 
+                // or they can close it manually. 
+              }, 800);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  };
+
   return (
     <div className="space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
       <COS_ToastContainer toasts={toasts} onRemove={removeToast} />
@@ -366,16 +447,79 @@ const InvoiceManagement: React.FC = () => {
               className="relative w-full max-w-4xl bg-white dark:bg-[#0c0c0c] h-full shadow-2xl flex flex-col z-[1010]"
             >
               {/* Drawer Header */}
-              <div className="px-10 py-8 flex items-center justify-between border-b dark:border-zinc-900 bg-white/50 dark:bg-black/50 backdrop-blur-md shrink-0">
-                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-[1.2rem] bg-primary-500/10 text-primary-500 flex items-center justify-center shadow-inner">
-                    <FileText size={28} />
+              {/* Drawer Actions - Navigation and Tools */}
+              <div className="px-10 py-6 border-b dark:border-zinc-900 bg-white/50 dark:bg-black/50 backdrop-blur-md shrink-0 flex items-center justify-between">
+                {/* Navigation */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const idx = filteredInvoices.findIndex(inv => inv.id === selectedInvoice.id);
+                      if (idx > 0) setSelectedInvoice(filteredInvoices[idx - 1]);
+                    }}
+                    disabled={filteredInvoices.findIndex(inv => inv.id === selectedInvoice.id) === 0}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-900 text-slate-500 hover:text-primary-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Previous Invoice"
+                  >
+                    <ChevronRight size={20} className="rotate-180" />
+                  </button>
+                  <span className="text-xs font-bold text-slate-400">
+                    {filteredInvoices.findIndex(inv => inv.id === selectedInvoice.id) + 1} / {filteredInvoices.length}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const idx = filteredInvoices.findIndex(inv => inv.id === selectedInvoice.id);
+                      if (idx < filteredInvoices.length - 1) setSelectedInvoice(filteredInvoices[idx + 1]);
+                    }}
+                    disabled={filteredInvoices.findIndex(inv => inv.id === selectedInvoice.id) === filteredInvoices.length - 1}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-900 text-slate-500 hover:text-primary-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Next Invoice"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+
+                {/* Status Bar */}
+                <div className="hidden md:flex items-center gap-1">
+                  {['draft', 'pending', 'paid'].map((step, idx) => {
+                    const currentStatusIdx = ['draft', 'pending', 'paid'].indexOf(selectedInvoice.status === 'overdue' ? 'pending' : selectedInvoice.status);
+                    const isCompleted = idx <= currentStatusIdx;
+                    const isActive = idx === currentStatusIdx;
+
+                    return (
+                      <div key={step} className="flex items-center">
+                        <div className={`px-4 py-1.5 rounded-full text-[10px] uppercase font-black tracking-widest border transition-all ${isActive
+                          ? 'bg-primary-500 text-white border-primary-500'
+                          : isCompleted
+                            ? 'bg-primary-500/10 text-primary-500 border-primary-500/20'
+                            : 'bg-slate-50 dark:bg-zinc-900 text-slate-400 border-transparent'
+                          }`}>
+                          {step}
+                        </div>
+                        {idx < 2 && <div className={`w-8 h-0.5 mx-1 ${isCompleted ? 'bg-primary-500/50' : 'bg-slate-200 dark:bg-zinc-800'}`} />}
+                      </div>
+                    );
+                  })}
+                  {selectedInvoice.status === 'overdue' && (
+                    <div className="flex items-center ml-1">
+                      <div className="w-8 h-0.5 mx-1 bg-red-500/50" />
+                      <div className="px-4 py-1.5 rounded-full text-[10px] uppercase font-black tracking-widest border bg-red-500 text-white border-red-500 animate-pulse">
+                        OVERDUE
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Drawer Header (Condensed) */}
+              <div className="px-10 py-4 flex items-center justify-between border-b dark:border-zinc-900 bg-white/50 dark:bg-black/50 backdrop-blur-md shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-[0.8rem] bg-primary-500/10 text-primary-500 flex items-center justify-center shadow-inner">
+                    <FileText size={20} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-display font-black dark:text-white">Invoice Details</h3>
-                    <div className="flex items-center gap-3 mt-1">
+                    <h3 className="text-lg font-display font-black dark:text-white">{selectedInvoice.clientName}</h3>
+                    <div className="flex items-center gap-3">
                       <span className="text-xs font-mono font-bold text-slate-400">{selectedInvoice.id}</span>
-                      <COS_Badge sentiment={getStatusColor(selectedInvoice.status)}>{selectedInvoice.status}</COS_Badge>
                     </div>
                   </div>
                 </div>
@@ -388,18 +532,19 @@ const InvoiceManagement: React.FC = () => {
                       Mark Paid
                     </COS_Button>
                   )}
-                  <button onClick={() => setSelectedInvoice(null)} className="p-3 rounded-2xl bg-slate-100 dark:bg-zinc-900 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors">
-                    <X size={20} />
+                  <button onClick={() => setSelectedInvoice(null)} className="p-2 rounded-xl bg-slate-100 dark:bg-zinc-900 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors">
+                    <X size={18} />
                   </button>
                 </div>
               </div>
 
               {/* Scrollable Preview Area */}
-              <div className="flex-1 overflow-y-auto p-12 bg-slate-50 dark:bg-[#050505] flex justify-center">
+              <div className="flex-1 overflow-y-auto p-12 bg-slate-50 dark:bg-[#050505] flex justify-center print:p-0 print:overflow-visible">
                 <motion.div
+                  id="invoice-preview-container"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  className="w-full max-w-3xl bg-white dark:bg-black rounded-[1.5rem] shadow-xl overflow-hidden border dark:border-zinc-800 min-h-[800px] flex flex-col"
+                  className="w-full max-w-3xl bg-white dark:bg-black rounded-[1.5rem] shadow-xl overflow-hidden border dark:border-zinc-800 min-h-[800px] flex flex-col print:shadow-none print:border-none"
                 >
                   {/* Branding Strip */}
                   <div className="h-3 w-full" style={{ backgroundColor: brandingColor }} />
@@ -502,10 +647,18 @@ const InvoiceManagement: React.FC = () => {
                 >
                   {sendingId === selectedInvoice.id ? 'Transmiting...' : 'Send Invoice'}
                 </COS_Button>
-                <button className="p-4 bg-white dark:bg-zinc-900 border dark:border-zinc-800 text-slate-500 rounded-2xl hover:text-primary-500 transition-colors" title="Download PDF">
+                <button
+                  onClick={handlePrintInvoice}
+                  className="p-4 bg-white dark:bg-zinc-900 border dark:border-zinc-800 text-slate-500 rounded-2xl hover:text-primary-500 transition-colors"
+                  title="Download PDF"
+                >
                   <Download size={22} />
                 </button>
-                <button className="p-4 bg-white dark:bg-zinc-900 border dark:border-zinc-800 text-slate-500 rounded-2xl hover:text-primary-500 transition-colors" title="Print">
+                <button
+                  onClick={handlePrintInvoice}
+                  className="p-4 bg-white dark:bg-zinc-900 border dark:border-zinc-800 text-slate-500 rounded-2xl hover:text-primary-500 transition-colors"
+                  title="Print"
+                >
                   <Printer size={22} />
                 </button>
                 <button

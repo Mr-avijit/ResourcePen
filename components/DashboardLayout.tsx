@@ -102,6 +102,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // --- Notification State ---
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'New Security Alert', message: 'Suspicious login attempt detected from IP 192.168.1.5.', time: '2m ago', read: false },
+    { id: 2, title: 'Server Update', message: 'Core system update v2.4.0 successfully deployed.', time: '1h ago', read: false },
+    { id: 3, title: 'New User Registration', message: 'User "Sarah Connor" has joined the workspace.', time: '3h ago', read: true },
+    { id: 4, title: 'Payment Received', message: 'Invoice #INV-2024-001 has been paid via Stripe.', time: '5h ago', read: true },
+  ]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
   // Close search on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -482,10 +497,84 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <button onClick={toggleTheme} className="p-3 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200/60 dark:border-white/5 text-slate-400 hover:text-amber-500 hover:border-amber-500/30 transition-all shadow-sm">
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>
-              <button className="relative p-3 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200/60 dark:border-white/5 text-slate-400 hover:text-indigo-500 hover:border-indigo-500/30 transition-all shadow-sm">
-                <Bell size={20} />
-                <span className="absolute top-2.5 right-3 w-1.5 h-1.5 bg-indigo-500 rounded-full ring-2 ring-white dark:ring-black" />
-              </button>
+              {/* Notification Center */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  onBlur={() => setTimeout(() => setIsNotificationsOpen(false), 200)}
+                  className={`relative p-3 rounded-2xl transition-all shadow-sm group ${isNotificationsOpen
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 border border-indigo-200 dark:border-indigo-800'
+                    : 'bg-white dark:bg-[#0c0c0c] border border-slate-200/60 dark:border-white/5 text-slate-400 hover:text-indigo-500 hover:border-indigo-500/30'
+                    }`}
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-black animate-pulse" />
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {isNotificationsOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-zinc-800 rounded-[1.5rem] shadow-2xl overflow-hidden z-[900]"
+                      onMouseDown={(e) => e.preventDefault()} // Prevent blur on click
+                    >
+                      <div className="p-4 border-b border-slate-100 dark:border-zinc-900 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black uppercase tracking-widest dark:text-white">Notifications</span>
+                          {unreadCount > 0 && <span className="px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[9px] font-bold">{unreadCount}</span>}
+                        </div>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllRead}
+                            className="text-[9px] font-bold text-indigo-500 hover:text-indigo-600 uppercase tracking-wide"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-h-[300px] overflow-y-auto hide-scrollbar">
+                        {notifications.length === 0 ? (
+                          <div className="py-8 text-center px-6">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center mx-auto mb-3 text-slate-300">
+                              <Bell size={24} />
+                            </div>
+                            <p className="text-xs font-bold text-slate-500">All caught up! No new alerts.</p>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-slate-50 dark:divide-zinc-900">
+                            {notifications.map(note => (
+                              <div key={note.id} className={`p-4 hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors relative group ${!note.read ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
+                                <div className="flex gap-3">
+                                  <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!note.read ? 'bg-indigo-500' : 'bg-transparent'}`} />
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className="text-xs font-bold dark:text-white line-clamp-1">{note.title}</span>
+                                      <span className="text-[9px] text-slate-400 whitespace-nowrap ml-2">{note.time}</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-medium leading-relaxed line-clamp-2">{note.message}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-2 border-t border-slate-100 dark:border-zinc-900 bg-slate-50 dark:bg-zinc-950 text-center">
+                        <button className="text-[10px] font-black text-slate-400 hover:text-primary-500 uppercase tracking-widest transition-colors w-full py-2">
+                          View All Activity
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               <div className="h-8 w-px bg-slate-200 dark:bg-zinc-800 hidden sm:block mx-1" />
               <ProfileDropdown user={user} onNavigate={onNavigate} onLogout={onLogout} />
             </div>

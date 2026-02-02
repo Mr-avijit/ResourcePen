@@ -431,18 +431,27 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = viewType === 'table' ? 5 : 8;
+
   const toggleSelectUser = (id: string) => {
     setSelectedUsers(prev => prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]);
   };
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
+      // PER USER REQUEST: Do not show admin rows
+      if (user.role === 'admin') return false;
+
       const matchesSearch = `${user.firstName} ${user.lastName} ${user.email}`.toLowerCase().includes(search.toLowerCase());
       const matchesRole = roleFilter === 'All Roles' || user.role === roleFilter.toLowerCase();
       const matchesStatus = statusFilter === 'All Status' || user.status === statusFilter.toLowerCase();
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [search, roleFilter, statusFilter, users]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
   // Analytics Logic (Mock)
   const stats = useMemo(() => ({
@@ -454,7 +463,7 @@ const UserManagement: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-12 relative animate-in fade-in slide-in-from-bottom-4 duration-700 min-h-screen">
-      <COS_ToastContainer toasts={toasts} onRemove={() => { }} />
+      <COS_ToastContainer toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
 
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -541,7 +550,7 @@ const UserManagement: React.FC = () => {
                   type="text"
                   placeholder="Search ledger by name, email or ID..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                   className="bg-transparent outline-none text-sm font-bold text-slate-700 dark:text-white w-full placeholder:text-slate-400"
                 />
               </div>
@@ -555,22 +564,22 @@ const UserManagement: React.FC = () => {
                 )}
 
                 <div className="relative group">
-                  <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="appearance-none pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer transition-all outline-none">
-                    <option>All Roles</option><option>Admin</option><option>User</option>
+                  <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }} className="appearance-none pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer transition-all outline-none">
+                    <option>All Roles</option><option>User</option> {/* Removed Admin option */}
                   </select>
                   <ChevronLeft size={12} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-[-90deg] text-slate-400 pointer-events-none" />
                 </div>
                 <div className="relative group">
-                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer transition-all outline-none">
+                  <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="appearance-none pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer transition-all outline-none">
                     <option>All Status</option><option>Active</option><option>Pending</option><option>Suspended</option>
                   </select>
                   <ChevronLeft size={12} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-[-90deg] text-slate-400 pointer-events-none" />
                 </div>
                 <div className="w-px h-8 bg-slate-200 dark:bg-zinc-800 mx-2" />
-                <button onClick={() => setViewType('card')} className={`p-2.5 rounded-xl transition-colors ${viewType === 'card' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-slate-50 dark:bg-zinc-900 text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}>
+                <button onClick={() => { setViewType('card'); setCurrentPage(1); }} className={`p-2.5 rounded-xl transition-colors ${viewType === 'card' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-slate-50 dark:bg-zinc-900 text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}>
                   <LayoutGrid size={18} />
                 </button>
-                <button onClick={() => setViewType('table')} className={`p-2.5 rounded-xl transition-colors ${viewType === 'table' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-slate-50 dark:bg-zinc-900 text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}>
+                <button onClick={() => { setViewType('table'); setCurrentPage(1); }} className={`p-2.5 rounded-xl transition-colors ${viewType === 'table' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-slate-50 dark:bg-zinc-900 text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}>
                   <List size={18} />
                 </button>
               </div>
@@ -587,7 +596,7 @@ const UserManagement: React.FC = () => {
                 <div className="w-20 h-20 bg-slate-50 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
                   <Users size={32} />
                 </div>
-                <h3 className="text-lg font-bold dark:text-white">No Personnel Found</h3>
+                <h3 className="text-lg font-bold dark:text-white uppercase tracking-widest">NO USER FOUND</h3>
                 <p className="font-medium text-sm text-slate-400 mt-2">Try adjusting your filters or search query.</p>
               </div>
             ) : (
@@ -595,76 +604,78 @@ const UserManagement: React.FC = () => {
                 {/* View: TABLE */}
                 {viewType === 'table' && (
                   <div className="glass rounded-[2rem] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm bg-white dark:bg-[#0c0c0c]">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50/80 dark:bg-zinc-900/40 border-b border-slate-100 dark:border-zinc-800">
-                          <th className="px-8 py-5 w-[40px]">
-                            <input type="checkbox" className="w-4 h-4 rounded-md border-slate-300"
-                              onChange={(e) => setSelectedUsers(e.target.checked ? filteredUsers.map(u => u.id) : [])}
-                              checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                            />
-                          </th>
-                          <th className="px-2 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[40%]">Personnel</th>
-                          <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[15%]">Role</th>
-                          <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[15%]">Status</th>
-                          <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[15%]">Joined</th>
-                          <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right px-8 w-[15%]">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
-                        {filteredUsers.map((user, idx) => (
-                          <motion.tr
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            key={user.id}
-                            onClick={() => setSelectedUser(user)}
-                            className={`group hover:bg-slate-50 dark:hover:bg-zinc-900/30 transition-all cursor-pointer relative ${selectedUsers.includes(user.id) ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''}`}
-                          >
-                            <td className="px-8 py-4" onClick={e => e.stopPropagation()}>
-                              <input type="checkbox" className="w-4 h-4 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500"
-                                checked={selectedUsers.includes(user.id)}
-                                onChange={() => toggleSelectUser(user.id)}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50/80 dark:bg-zinc-900/40 border-b border-slate-100 dark:border-zinc-800">
+                            <th className="px-8 py-5 w-[40px]">
+                              <input type="checkbox" className="w-4 h-4 rounded-md border-slate-300"
+                                onChange={(e) => setSelectedUsers(e.target.checked ? paginatedUsers.map(u => u.id) : [])}
+                                checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUsers.includes(u.id))}
                               />
-                            </td>
-                            <td className="px-2 py-4">
-                              <div className="flex items-center gap-4">
-                                <div className="relative">
-                                  <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} className="w-10 h-10 rounded-xl shadow-sm object-cover bg-slate-100" alt="" />
-                                </div>
-                                <div>
-                                  <div className="text-sm font-bold dark:text-white group-hover:text-primary-600 transition-colors flex items-center gap-2">
-                                    {user.firstName} {user.lastName}
-                                    {user.status === 'active' && <CheckCircle2 size={12} className="text-emerald-500" />}
+                            </th>
+                            <th className="px-2 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[40%]">Personnel</th>
+                            <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[15%]">Role</th>
+                            <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[15%]">Status</th>
+                            <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] w-[15%]">Joined</th>
+                            <th className="py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right px-8 w-[15%]">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
+                          {paginatedUsers.map((user, idx) => (
+                            <motion.tr
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              key={user.id}
+                              onClick={() => setSelectedUser(user)}
+                              className={`group hover:bg-slate-50 dark:hover:bg-zinc-900/30 transition-all cursor-pointer relative ${selectedUsers.includes(user.id) ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''}`}
+                            >
+                              <td className="px-8 py-4" onClick={e => e.stopPropagation()}>
+                                <input type="checkbox" className="w-4 h-4 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500"
+                                  checked={selectedUsers.includes(user.id)}
+                                  onChange={() => toggleSelectUser(user.id)}
+                                />
+                              </td>
+                              <td className="px-2 py-4">
+                                <div className="flex items-center gap-4">
+                                  <div className="relative">
+                                    <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} className="w-10 h-10 rounded-xl shadow-sm object-cover bg-slate-100" alt="" />
                                   </div>
-                                  <div className="text-[10px] text-slate-400 font-mono">{user.email}</div>
+                                  <div>
+                                    <div className="text-sm font-bold dark:text-white group-hover:text-primary-600 transition-colors flex items-center gap-2">
+                                      {user.firstName} {user.lastName}
+                                      {user.status === 'active' && <CheckCircle2 size={12} className="text-emerald-500" />}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-mono">{user.email}</div>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="py-4"><RoleBadge role={user.role} /></td>
-                            <td className="py-4"><StatusBadge status={user.status} /></td>
-                            <td className="py-4">
-                              <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 font-mono">
-                                {new Date(user.joinedAt || Date.now()).toLocaleDateString()}
-                              </span>
-                            </td>
-                            <td className="py-4 text-right px-8">
-                              <div className="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => setEditingUser(user)} className="p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-400 hover:text-primary-500 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 transition-all"><Edit2 size={14} /></button>
-                                <button onClick={() => handleDeleteUser(user.id)} className="p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-400 hover:text-red-500 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 transition-all"><Trash2 size={14} /></button>
-                              </div>
-                            </td>
-                          </motion.tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              </td>
+                              <td className="py-4"><RoleBadge role={user.role} /></td>
+                              <td className="py-4"><StatusBadge status={user.status} /></td>
+                              <td className="py-4">
+                                <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 font-mono">
+                                  {new Date(user.joinedAt || Date.now()).toLocaleDateString()}
+                                </span>
+                              </td>
+                              <td className="py-4 text-right px-8">
+                                <div className="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                                  <button onClick={() => setEditingUser(user)} className="p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-400 hover:text-primary-500 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 transition-all"><Edit2 size={14} /></button>
+                                  <button onClick={() => handleDeleteUser(user.id)} className="p-2 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-400 hover:text-red-500 border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 transition-all"><Trash2 size={14} /></button>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
 
                 {/* View: CARD GRID */}
                 {viewType === 'card' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredUsers.map((user, idx) => (
+                    {paginatedUsers.map((user, idx) => (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -700,6 +711,30 @@ const UserManagement: React.FC = () => {
                     ))}
                   </div>
                 )}
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between mt-8 p-4 bg-white/50 dark:bg-[#0c0c0c]/50 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-zinc-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length} Users
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-500 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="text-xs font-black text-slate-700 dark:text-white px-2">Page {currentPage}</span>
+                    <button
+                      onClick={() => setCurrentPage(p => (startIndex + itemsPerPage < filteredUsers.length ? p + 1 : p))}
+                      disabled={startIndex + itemsPerPage >= filteredUsers.length}
+                      className="p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-slate-500 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
               </>
             )}
           </motion.div>

@@ -1,1 +1,0 @@
-// Genesis data seeding protocol

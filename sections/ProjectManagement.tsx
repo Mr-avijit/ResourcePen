@@ -131,7 +131,7 @@ const ProjectManagement: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-32 max-w-[1920px] mx-auto text-slate-900 dark:text-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <COS_ToastContainer toasts={toasts} onRemove={() => { }} />
+      <COS_ToastContainer toasts={toasts} onRemove={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
 
       {/* --- HEADER: COMPONENT VAULT --- */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 relative">

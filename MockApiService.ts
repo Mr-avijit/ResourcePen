@@ -401,6 +401,67 @@ export class MockApiService {
       ]
     };
   }
+
+  // --- SEO Token Lab Simulations ---
+
+  /**
+   * Simulates extracting semantic tokens from a seed keyword or URL.
+   * Returns a list of tokens with simulated metrics.
+   */
+  static async extractTokens(query: string): Promise<any[]> {
+    await this.delay(1200); // Simulate processing time
+
+    // Base tokens to mix in
+    const baseTokens = [
+      'enterprise ui', 'react dashboard', 'admin template', 'design system',
+      'frontend architecture', 'nextjs kit', 'tailwind components', 'saas boilerplate',
+      'web components', 'ui library'
+    ];
+
+    const results = baseTokens.map((t, i) => ({
+      id: `tok-${Date.now()}-${i}`,
+      token: query ? `${query} ${t.split(' ')[1] || 'design'}` : t, // Contextualize if query exists
+      relevance: Math.floor(Math.random() * (99 - 60) + 60),
+      volume: `${(Math.random() * 50 + 1).toFixed(1)}k`,
+      difficulty: Math.floor(Math.random() * 90 + 10),
+      semantic_cluster: ['Transactional', 'Informational', 'Commercial', 'Navigational'][Math.floor(Math.random() * 4)],
+      trend: ['up', 'down', 'stable'][Math.floor(Math.random() * 3)]
+    }));
+
+    return results.sort((a, b) => b.relevance - a.relevance).slice(0, 6);
+  }
+
+  /**
+   * Simulates a SERP ranking prediction based on current optimization levels.
+   */
+  static async simulateSERP(query: string): Promise<any> {
+    await this.delay(1500);
+    const rank = Math.floor(Math.random() * 10) + 1;
+    return {
+      engine: 'Google',
+      predicted_rank: rank,
+      click_through_rate: (35 / rank).toFixed(1), // Higher rank = higher CTR
+      visibility_score: Math.floor(Math.random() * (98 - 70) + 70),
+      preview: {
+        title: query ? `${query} - Enterprise Solution` : 'Enterprise UI Architecture - The Next Gen Design System',
+        url: 'resources-pen.io/products/enterprise-ui',
+        desc: `Accelerate your ${query || 'development'} with the world's most advanced UI kit. Built for High-Scale Applications.`
+      }
+    };
+  }
+
+  /**
+   * Simulates a competitor gap analysis.
+   */
+  static async analyzeCompetitorGap(domain: string): Promise<any[]> {
+    await this.delay(2000);
+    return [
+      { token: 'accessibility standards', gap: -15, opportunity: 'High' },
+      { token: 'dark mode optimization', gap: 5, opportunity: 'Low' },
+      { token: 'performance metrics', gap: -22, opportunity: 'Critical' },
+      { token: 'internationalization', gap: -8, opportunity: 'Medium' }
+    ];
+  }
   // --- Support Tickets ---
   static async getTickets(): Promise<any[]> {
     // MOCK DATA for Tickets

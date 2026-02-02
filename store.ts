@@ -75,15 +75,40 @@ const NavigationContext = createContext<NavigationContextType | undefined>(undef
 
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role } = useAuth();
-  const [view, setView] = useState<AppView>('home');
-  const [params, setParams] = useState<any>(null);
+
+  const [view, setView] = useState<AppView>(() => {
+    const savedView = localStorage.getItem('psp_last_view') as AppView;
+    if (savedView && canAccessView(role, savedView)) {
+      return savedView;
+    }
+    return 'home';
+  });
+
+  const [params, setParams] = useState<any>(() => {
+    const savedParams = localStorage.getItem('psp_last_params');
+    try {
+      return savedParams ? JSON.parse(savedParams) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const navigate = useCallback((newView: AppView, newParams?: any, overrideRole?: AppRole) => {
     const effectiveRole = overrideRole !== undefined ? overrideRole : role;
-    
+
+    // Save to localStorage
+    localStorage.setItem('psp_last_view', newView);
+    if (newParams) {
+      localStorage.setItem('psp_last_params', JSON.stringify(newParams));
+    } else {
+      localStorage.removeItem('psp_last_params');
+    }
+
     if (!canAccessView(effectiveRole, newView)) {
       if (!effectiveRole) {
         setView('login');
+        // Even if redirected to login, we might want to keep the INTENDED view in storage? 
+        // For now, let's keep simple behavior. The user is redirected.
       } else {
         setView('403');
       }
@@ -123,9 +148,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : [];
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  
-  useEffect(() => { 
-    localStorage.setItem('psp_cart', JSON.stringify(cart)); 
+
+  useEffect(() => {
+    localStorage.setItem('psp_cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (product: Product) => {

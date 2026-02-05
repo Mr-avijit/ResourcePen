@@ -17,6 +17,8 @@ const Team: React.FC<TeamProps> = ({ onNavigate }) => {
   const [direction, setDirection] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [itemsPerView, setItemsPerView] = useState(3);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Responsive Handler
   useEffect(() => {
@@ -48,6 +50,7 @@ const Team: React.FC<TeamProps> = ({ onNavigate }) => {
           bio: "Architecting scalable digital foundations for the enterprise ecosystem."
         }));
         setTeam(teamMembers);
+        // Start in the middle or 0? 0 is fine.
       } catch (err) {
         console.error("Team manifest retrieval failure.");
       } finally {
@@ -57,17 +60,44 @@ const Team: React.FC<TeamProps> = ({ onNavigate }) => {
     fetchTeam();
   }, []);
 
+  // Clones for Infinite Loop: Append items matching itemsPerView
+  const extendedTeam = team.length
+    ? [...team, ...team.slice(0, itemsPerView).map(m => ({ ...m, id: `${m.id}-clone` }))]
+    : [];
+
+  // Auto-play logic
+  useEffect(() => {
+    if (team.length === 0 || isLoading || isPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => prev + 1);
+    }, 3000); // Auto-play every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [team.length, isPaused, isLoading]);
+
+  // Handle loop reset when animation completes
+  const handleAnimationComplete = () => {
+    // If we have slid past the last real item into clones
+    if (currentIndex >= team.length) {
+      setIsResetting(true);
+      setCurrentIndex(currentIndex % team.length);
+      // Wait for render to apply duration:0, then re-enable animation
+      setTimeout(() => setIsResetting(false), 50);
+    }
+  };
+
   const paginate = useCallback((newDirection: number) => {
     setDirection(newDirection);
     setCurrentIndex((prev) => {
       const nextIndex = prev + newDirection;
-      const maxIndex = team.length - itemsPerView;
-      // Loop or clamp? Let's clamp for this style of list
-      if (nextIndex < 0) return 0;
-      if (nextIndex > maxIndex) return maxIndex;
+      // Loop backwards
+      if (nextIndex < 0) return team.length - 1;
+      // Forward allows going into clones (max index = team.length)
+      if (nextIndex > team.length) return 0;
       return nextIndex;
     });
-  }, [team.length, itemsPerView]);
+  }, [team.length]);
 
   if (isLoading) return <div className="py-24 flex justify-center"><COS_Spinner size={40} /></div>;
 
@@ -101,28 +131,32 @@ const Team: React.FC<TeamProps> = ({ onNavigate }) => {
           <div className="flex gap-3">
             <button
               onClick={() => paginate(-1)}
-              disabled={currentIndex === 0}
-              className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+              className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all shadow-sm group"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
             </button>
             <button
               onClick={() => paginate(1)}
-              disabled={currentIndex >= team.length - itemsPerView}
-              className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white border border-slate-900 dark:border-white text-white dark:text-black flex items-center justify-center hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xl"
+              className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white border border-slate-900 dark:border-white text-white dark:text-black flex items-center justify-center hover:opacity-90 transition-all shadow-xl group"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>
 
-        <div className="relative overflow-hidden -mx-4 px-4 py-4" ref={containerRef}>
+        <div
+          className="relative overflow-hidden -mx-4 px-4 py-4"
+          ref={containerRef}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
           <motion.div
             className="flex gap-5"
-            animate={{ x: `calc(-${currentIndex * (100 / itemsPerView)}% - ${currentIndex * 1.25}rem)` }} // gap-5 is 1.25rem
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            animate={{ x: `calc(-${currentIndex * (100 / itemsPerView)}% - ${currentIndex * 1.25}rem)` }}
+            transition={isResetting ? { duration: 0 } : { duration: 0.8, ease: "easeInOut" }}
+            onAnimationComplete={handleAnimationComplete}
           >
-            {team.map((member) => (
+            {extendedTeam.map((member) => (
               <div
                 key={member.id}
                 className="min-w-full sm:min-w-[calc(50%-0.625rem)] lg:min-w-[calc(33.333%-0.85rem)] xl:min-w-[calc(25%-0.95rem)] shrink-0"
@@ -196,9 +230,9 @@ const Team: React.FC<TeamProps> = ({ onNavigate }) => {
           <motion.div
             className="absolute top-0 left-0 h-full bg-primary-600"
             animate={{
-              width: `${itemsPerView === team.length ? 100 : ((currentIndex + itemsPerView) / team.length) * 100}%`
+              width: `${team.length ? ((currentIndex % team.length + itemsPerView) / team.length) * 100 : 0}%`
             }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={isResetting ? { duration: 0 } : { duration: 0.8, ease: "easeInOut" }}
           />
         </div>
 
